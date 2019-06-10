@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "549706247363",
+    "firebase_url": "https://cidadedorme-f2685.firebaseio.com",
+    "project_id": "cidadedorme-f2685",
+    "storage_bucket": "cidadedorme-f2685.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549706247363:android:01710827cc196d36",
+        "android_client_info": {
+          "package_name": "com.example.renato.cidadedorme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "549706247363-nr76blk6gs3cnn09u6uqjks75d9ojq03.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.renato.cidadedorme",
+            "certificate_hash": "24bddc08eedaa9478629071d7963e4bb978cfa6d"
+          }
+        },
+        {
+          "client_id": "549706247363-qbsj8egnj4n1ndts1p9tkrjsqmsuomhj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAacie_PgVLh-ga5bBPSZfh6hitSESLC18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "549706247363-qbsj8egnj4n1ndts1p9tkrjsqmsuomhj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
