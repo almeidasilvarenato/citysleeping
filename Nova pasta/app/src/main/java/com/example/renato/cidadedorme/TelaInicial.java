@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.renato.cidadedorme.dados.DadosUsuario;
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
@@ -19,13 +20,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 
 public class TelaInicial extends AppCompatActivity {
 
     //Implementações e variaveis
     //==============================================================================================
-    Button sair;
-    Button sair1;
+    Button sair_tudo;
 
     //Google
     private GoogleSignInClient mGoogleSignInClient;
@@ -35,22 +37,23 @@ public class TelaInicial extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tela_inicial);
 
-        sair = (Button) findViewById(R.id.sair);
+        //Adicionar os dados
+        final DadosUsuario dados = new DadosUsuario();
 
-        sair.setOnClickListener(new View.OnClickListener() {
+        Toast.makeText(this, ""+dados.getUid(), Toast.LENGTH_SHORT).show();
+
+        //Botão de sair dar 2 redes sociais Facebook e Google
+        sair_tudo = (Button) findViewById(R.id.sair_tudo);
+        sair_tudo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                facebookLogout();
+                if(dados.getTipoConexao()==1){
+                    facebookLogout();
 
-            }
-        });
-
-        sair1 = (Button) findViewById(R.id.sair1);
-        sair1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                doGoogleSignOut();
+                } else if(dados.getTipoConexao()==2){
+                    doGoogleSignOut();
+                }
             }
         });
 
@@ -113,5 +116,4 @@ public class TelaInicial extends AppCompatActivity {
                     }
                 });
     }
-
 }

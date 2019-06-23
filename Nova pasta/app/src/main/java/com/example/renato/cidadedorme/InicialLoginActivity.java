@@ -1,16 +1,21 @@
 package com.example.renato.cidadedorme;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.renato.cidadedorme.dados.LoginFacebook;
+import com.example.renato.cidadedorme.dados.DadosUsuario;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
@@ -44,6 +49,19 @@ public class InicialLoginActivity extends AppCompatActivity {
     //Importações
     //==============================================================================================
 
+    //Ferramentas para animação
+    Animation animFadeOut, animMoveDown;
+
+    ImageView img_cidade;
+    TextView txt_cidade;
+    Button login_entrar;
+    EditText userName;
+    EditText userKey;
+    TextView textView;
+    TextView textView2;
+    ConstraintLayout linha;
+
+
     //Facebook
     private CallbackManager callbackManager;
     private LoginButton loginButtonFacebook;
@@ -61,6 +79,7 @@ public class InicialLoginActivity extends AppCompatActivity {
 
     //Intents
     private Intent telaInicial;
+    private Intent criarNickName;
 
     //----------------------------------------------------------------------------------------------
 
@@ -79,7 +98,7 @@ public class InicialLoginActivity extends AppCompatActivity {
         //==========================================================================================
         facebookStatus();
         facebookConect();
-        loginBd();
+
         //------------------------------------------------------------------------------------------
 
         //Inicia a conexão com o Google
@@ -96,6 +115,65 @@ public class InicialLoginActivity extends AppCompatActivity {
 
         //------------------------------------------------------------------------------------------
 
+        //Faz a animação
+        //==========================================================================================
+        login_entrar = (Button) findViewById(R.id.login_entrar);
+        login_entrar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //fadeOut();
+                //moveDown();
+            }
+        });
+
+
+        //------------------------------------------------------------------------------------------
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            //method to handle google sign in result
+            handleSignInResult(task);
+
+            try{
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                firebaseAuthWithGoogle(account);
+                //Toast.makeText(this, ""+task, Toast.LENGTH_SHORT).show();
+
+
+
+            } catch (ApiException e){
+                Toast.makeText(this, "Iii falha"+ e, Toast.LENGTH_SHORT).show();
+
+            }
+
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        updateUI(currentUser);
+
+        // google
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        //update the UI if user has already sign in with the google for this app
+        getProfileInformation(account);
+
+        //-------
+    }
+
+    private void updateUI(FirebaseUser currentUser) {
     }
 
 
@@ -152,71 +230,24 @@ public class InicialLoginActivity extends AppCompatActivity {
 
                         //Aqui se chama o metodo que conecta o facebook ao firebase
                         handleFacebookAccessToken(loginResult.getAccessToken());
-                        loginBd();
-
-                        //Aqui importa e inicial a tela inicial do jogo logo após o usuario estar conectado
-                        telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
-                        startActivity(telaInicial);
-                        finish();
 
                     }
 
                     @Override
                     public void onCancel() {
                         // App code
-                        Toast.makeText(InicialLoginActivity.this, "Cancelado!", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(InicialLoginActivity.this, "Cancelado!", Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
                     public void onError(FacebookException exception) {
                         // App code
-                        Toast.makeText(InicialLoginActivity.this, "Erro"+ exception, Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(InicialLoginActivity.this, "Erro"+ exception, Toast.LENGTH_SHORT).show();
                     }
                 });
 
 
     };
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        callbackManager.onActivityResult(requestCode, resultCode, data);
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach
-            // a listener.
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            //method to handle google sign in result
-            handleSignInResult(task);
-
-            try{
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                firebaseAuthWithGoogle(account);
-                //Toast.makeText(this, ""+task, Toast.LENGTH_SHORT).show();
-
-
-
-            } catch (ApiException e){
-                Toast.makeText(this, "Iii falha"+ e, Toast.LENGTH_SHORT).show();
-
-            }
-
-
-            //google
-//            try {
-//                // Google Sign In was successful, authenticate with Firebase
-//                GoogleSignInAccount account = task.getResult(ApiException.class);
-//                firebaseAuthWithGoogle(account);
-//                Toast.makeText(this, ""+account, Toast.LENGTH_SHORT).show();
-//            } catch (ApiException e) {
-//                // Google Sign In failed, update UI appropriately
-//                Log.w(TAG, "Google sign in failed", e);
-//                // ...
-//            }
-
-        }
-    }
 
     //Fim da conexão pelo facebook
     //----------------------------------------------------------------------------------------------
@@ -251,48 +282,39 @@ public class InicialLoginActivity extends AppCompatActivity {
 
     public void facebookStatus(){
 
+        DadosUsuario dados = new DadosUsuario();
         AccessToken accessToken = AccessToken.getCurrentAccessToken();
         boolean isLoggedIn = accessToken != null && !accessToken.isExpired();
 
         if(isLoggedIn == true){
 
-            //Aqui importa e inicial a tela inicial do jogo logo após o usuario estar conectado
-            telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
-            startActivity(telaInicial);
-            finish();
+            dados.setTipoConexao(1);
+            dados();
+
+            //Verifica se já ah conta
+            dados.verificarExistencia();
+            if(dados.getConta()==false){
+
+                criarNickName = new Intent(InicialLoginActivity.this, CriarNomeUsuario.class);
+                startActivity(criarNickName);
+                finish();
+
+            } else {
+
+                //Aqui importa e inicial a tela inicial do jogo logo após o usuario estar conectado
+                telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
+                startActivity(telaInicial);
+                finish();
+            }
 
         }
-        //Toast.makeText(this, ""+isLoggedIn, Toast.LENGTH_SHORT).show();
-        //Maneira diferente para se adicionar um botão.
-        //LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
-
     }
 
     //----------------------------------------------------------------------------------------------
 
 
-
-    //Conexao do Facebook ao firebase
+    //Conexao do Facebook e Google ao firebase
     //==============================================================================================
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        updateUI(currentUser);
-
-        // google
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        //update the UI if user has already sign in with the google for this app
-        getProfileInformation(account);
-
-        //-------
-    }
-
-    private void updateUI(FirebaseUser currentUser) {
-    }
 
     private void handleFacebookAccessToken(AccessToken token) {
         //Log.d(TAG, "handleFacebookAccessToken:" + token);
@@ -307,6 +329,39 @@ public class InicialLoginActivity extends AppCompatActivity {
                             //Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             updateUI(user);
+
+                            //Aqui envia os dados para o banco ou pega os dados de lá
+                            DadosUsuario dados = new DadosUsuario();
+                            dados.setTipoConexao(1);
+
+                            for (UserInfo profile : user.getProviderData()) {
+                                // Id of the provider (ex: google.com)
+
+                                dados.setUid(profile.getUid());
+
+                                // Name, email address, and profile photo Url
+                                dados.setNome(profile.getDisplayName());
+                                dados.setEmail(profile.getEmail());
+                                dados.setUrlFoto(profile.getPhotoUrl().toString());
+
+                            }
+
+                            //Verifica se já ah conta
+                            dados.verificarExistencia();
+                            if(dados.getConta()==false){
+
+                                criarNickName = new Intent(InicialLoginActivity.this, CriarNomeUsuario.class);
+                                startActivity(criarNickName);
+                                finish();
+
+                            } else {
+
+                                //Aqui importa e inicial a tela inicial do jogo logo após o usuario estar conectado
+                                telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
+                                startActivity(telaInicial);
+                                finish();
+                            }
+
                         } else {
                             // If sign in fails, display a message to the user.
                             //Log.w(TAG, "signInWithCredential:failure", task.getException());
@@ -325,6 +380,29 @@ public class InicialLoginActivity extends AppCompatActivity {
 
     //Pegar Dados do facebook ou outra rede exemplo
     //==============================================================================================
+
+    public void dados(){
+
+        //Esse metodo pega os dados direto do firebase
+        //==========================================================================================
+
+        DadosUsuario dados = new DadosUsuario();
+
+        if (user != null) {
+            for (UserInfo profile : user.getProviderData()) {
+                // Id of the provider (ex: google.com)
+
+                dados.setUid(profile.getUid());
+
+                // Name, email address, and profile photo Url
+                dados.setNome(profile.getDisplayName());
+                dados.setEmail(profile.getEmail());
+                dados.setUrlFoto(profile.getPhotoUrl().toString());
+
+            }
+        }
+    }
+
     /*
     public void pegaDados(){
 
@@ -380,47 +458,6 @@ public class InicialLoginActivity extends AppCompatActivity {
         //------------------------------------------------------------------------------------------
 
 
-    //Aqui será responsavel por armazenar os dados do usuario no banco de dados e no banco de documentos
-    //==============================================================================================
-    private void loginBd(){
-
-        final LoginFacebook loginFacebook = new LoginFacebook();
-
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
-        if (user != null) {
-            for (UserInfo profile : user.getProviderData()) {
-
-                loginFacebook.setEmail(profile.getEmail());
-                loginFacebook.setUid(profile.getUid());
-
-            }
-
-        mDatabase.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                loginFacebook.setConta(dataSnapshot.child("USUARIO").child("ID").child(loginFacebook.getUid()).exists());
-                //Toast.makeText(InicialLoginActivity.this, ""+loginFacebook.getConta(), Toast.LENGTH_SHORT).show();
-
-                if(loginFacebook.getConta()==false)
-                {
-                    mDatabase.child("USUARIO").child("ID").child(LoginFacebook.getUid()).child("EMAIL").setValue(loginFacebook.getEmail());
-                }
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-
-    }
-        }
-
     //----------------------------------------------------------------------------------------------
 
     //Inicio da conexão com o Google
@@ -453,7 +490,9 @@ public class InicialLoginActivity extends AppCompatActivity {
             getProfileInformation(account);
 
             //show toast
-            Toast.makeText(this, "Google Sign In Successful.", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "Google Sign In Successful.", Toast.LENGTH_SHORT).show();
+
+
 
 
         } catch (ApiException e) {
@@ -468,35 +507,50 @@ public class InicialLoginActivity extends AppCompatActivity {
             getProfileInformation(null);
         }
     }
+
+    //Aqui é responsavel por se pegar os dados do usuario no Google
     private void getProfileInformation(GoogleSignInAccount acct) {
         //if account is not null fetch the information
         if (acct != null) {
 
-            telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
-            startActivity(telaInicial);
-            finish();
+            //Adiciona os dados a classe dados
+            DadosUsuario dados = new DadosUsuario();
+            dados.setTipoConexao(2);
+            dados.setUid(acct.getId());
+            dados.setEmail(acct.getEmail());
+            dados.setNome(acct.getDisplayName());
+            dados.setUrlFoto(acct.getPhotoUrl().toString());
+            //Toast.makeText(this, ""+dados.getUrlFoto(), Toast.LENGTH_SHORT).show();
+
+            //Verifica se já ah conta
+            dados.verificarExistencia();
+            if(dados.getConta()==false){
+
+                criarNickName = new Intent(InicialLoginActivity.this, CriarNomeUsuario.class);
+                startActivity(criarNickName);
+                finish();
+
+            } else {
+
+                //Aqui importa e inicial a tela inicial do jogo logo após o usuario estar conectado
+                telaInicial = new Intent(InicialLoginActivity.this, TelaInicial.class);
+                startActivity(telaInicial);
+                finish();
+            }
 
             //user display name
-            String personName = acct.getDisplayName();
-
+            //String personName = acct.getDisplayName();
             //user first name
-            String personGivenName = acct.getGivenName();
-
+            //String personGivenName = acct.getGivenName();
             //user last name
-            String personFamilyName = acct.getFamilyName();
-
+            //String personFamilyName = acct.getFamilyName();
             //user email id
-            String personEmail = acct.getEmail();
-
+            //String personEmail = acct.getEmail();
             //user unique id
-            String personId = acct.getId();
-
+            //String personId = acct.getId();
             //user profile pic
-            Uri personPhoto = acct.getPhotoUrl();
+            //Uri personPhoto = acct.getPhotoUrl();
 
-            //show the user details
-//            userDetailLabel.setText("ID : " + personId + "\nDisplay Name : " + personName + "\nFull Name : " + personGivenName + " " + personFamilyName + "\nEmail : " + personEmail);
-//
 //            //show the user profile pic
 //            Picasso.with(this).load(personPhoto).fit().placeholder(R.mipmap.ic_launcher_round).into(userProfileImageView);
 //
@@ -531,6 +585,57 @@ public class InicialLoginActivity extends AppCompatActivity {
     }
 
     //----------------------------------------------------------------------------------------------
+
+    //Animação
+    //==============================================================================================
+
+    public void fadeOut(){
+
+        //Implementações
+        txt_cidade = (TextView) findViewById(R.id.txt_cidade);
+        facebookButton = (Button) findViewById(R.id.facebookButton);
+        gmailButton = (Button) findViewById(R.id.gmailButton);
+        userName = (EditText) findViewById(R.id.userName);
+        userKey = (EditText) findViewById(R.id.userKey);
+        textView = (TextView) findViewById(R.id.textView);
+        linha = (ConstraintLayout) findViewById(R.id.linha);
+        textView2 = (TextView) findViewById(R.id.textView2);
+
+        //Implementação da animação
+        animFadeOut = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.fade_out);
+
+        //Usar a animação
+        txt_cidade.startAnimation(animFadeOut);
+        facebookButton.startAnimation(animFadeOut);
+        gmailButton.startAnimation(animFadeOut);
+        login_entrar.startAnimation(animFadeOut);
+        userName.startAnimation(animFadeOut);
+        userKey.startAnimation(animFadeOut);
+        textView.startAnimation(animFadeOut);
+        linha.startAnimation(animFadeOut);
+        textView2.startAnimation(animFadeOut);
+
+        //Continuar invisivel
+        txt_cidade.setVisibility(View.INVISIBLE);
+        facebookButton.setVisibility(View.INVISIBLE);
+        gmailButton.setVisibility(View.INVISIBLE);
+        login_entrar.setVisibility(View.INVISIBLE);
+        userName.setVisibility(View.INVISIBLE);
+        userKey.setVisibility(View.INVISIBLE);
+        textView.setVisibility(View.INVISIBLE);
+        linha.setVisibility(View.INVISIBLE);
+        textView2.setVisibility(View.INVISIBLE);
+
+    }
+
+    public void moveDown (){
+        animMoveDown = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.move_down);
+
+        img_cidade = (ImageView) findViewById(R.id.img_cidade);
+        img_cidade.startAnimation(animMoveDown);
+
+
+    }
 
     }
 
